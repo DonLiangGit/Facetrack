@@ -19,6 +19,7 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.IOException;
+import java.util.Random;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -36,8 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private FaceGraphic mFaceGraphic;
     private Context mContext;
 
-    private boolean wasActivityResumed = false;
-    private boolean usingFrontCamera = true;
+    private FaceGraphic.FaceEmojiType mFaceEmojiType = FaceGraphic.FaceEmojiType.CAT;
+    private boolean isFrontFaceCamera = true;
+    private boolean isPausedBefore = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +81,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @OnClick(R.id.faceSwitch)
+    public void faceSwitch() {
+        mGraphicOverlay.clear();
+        mFaceEmojiType = randomFace();
+        mFaceGraphic.changeFaceEmojiType(mFaceEmojiType);
+        mFaceGraphic.postInvalidate();
+    }
+
+    private FaceGraphic.FaceEmojiType randomFace() {
+        int randomFace = new Random().nextInt(FaceGraphic.FaceEmojiType.values().length);
+        return FaceGraphic.FaceEmojiType.values()[randomFace];
+    }
+
+    @OnClick(R.id.cameraSwitch)
+    public void cameraSwitchClicked() {
+        stopCameraSource();
+        if (isFrontFaceCamera) {
+            createCameraSourceBack();
+        } else {
+            createCameraSourceFront();
+        }
+    }
+
     private void createCameraSourceFront() {
+        isFrontFaceCamera = true;
         mPreviewFaceDetector = new FaceDetector.Builder(mContext)
                 .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
                 .setLandmarkType(FaceDetector.ALL_LANDMARKS)
@@ -103,19 +129,8 @@ public class MainActivity extends AppCompatActivity {
         startCameraSource();
     }
 
-    @OnClick(R.id.faceSwitch)
-    public void faceSwitch() {
-        mGraphicOverlay.clear();
-        mFaceGraphic.changeFaceEmojiType(FaceGraphic.FaceEmojiType.DOG);
-        mFaceGraphic.postInvalidate();
-    }
-
-    @OnClick(R.id.cameraSwitch)
-    public void cameraSwitchClicked() {
-        createCameraSourceBack();
-    }
-
     private void createCameraSourceBack() {
+        isFrontFaceCamera = false;
         mPreviewFaceDetector = new FaceDetector.Builder(mContext)
                 .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
                 .setLandmarkType(FaceDetector.ALL_LANDMARKS)
@@ -158,16 +173,14 @@ public class MainActivity extends AppCompatActivity {
     private class GraphicFaceTrackerFactory implements MultiProcessor.Factory<Face> {
         @Override
         public Tracker<Face> create(Face face) {
-            return new GraphicFaceTracker(mGraphicOverlay);
+            return new GraphicFaceTracker();
         }
     }
 
     private class GraphicFaceTracker extends Tracker<Face> {
-        private GraphicOverlay mOverlay;
 
-        GraphicFaceTracker(GraphicOverlay overlay) {
-            mOverlay = overlay;
-            mFaceGraphic = new FaceGraphic(overlay, mContext);
+        GraphicFaceTracker() {
+            mFaceGraphic = new FaceGraphic(mGraphicOverlay, mFaceEmojiType, mContext);
         }
 
         /**
@@ -183,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
          */
         @Override
         public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
-            mOverlay.add(mFaceGraphic);
+            mGraphicOverlay.add(mFaceGraphic);
             mFaceGraphic.updateFace(face);
         }
 
@@ -195,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onMissing(FaceDetector.Detections<Face> detectionResults) {
             mFaceGraphic.goneFace();
-            mOverlay.remove(mFaceGraphic);
+            mGraphicOverlay.remove(mFaceGraphic);
         }
 
         /**
@@ -205,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDone() {
             mFaceGraphic.goneFace();
-            mOverlay.remove(mFaceGraphic);
+            mGraphicOverlay.remove(mFaceGraphic);
         }
     }
 
@@ -231,22 +244,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (wasActivityResumed) {
-            startCameraSource();
+
+        if (isPausedBefore) {
+            if (isFrontFaceCamera) {
+                createCameraSourceFront();
+            } else {
+                createCameraSourceBack();
+            }
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        wasActivityResumed = true;
         stopCameraSource();
+        mGraphicOverlay.clear();
+        isPausedBefore = true;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopCameraSource();
+        mGraphicOverlay.clear();
         if (mPreviewFaceDetector != null) {
             mPreviewFaceDetector.release();
         }

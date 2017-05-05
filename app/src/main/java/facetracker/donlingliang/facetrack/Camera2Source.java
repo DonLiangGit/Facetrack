@@ -33,6 +33,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
+import android.view.TextureView;
 
 import com.google.android.gms.common.images.Size;
 import com.google.android.gms.vision.Detector;
@@ -165,10 +166,7 @@ public class Camera2Source {
      */
     private static final int MAX_PREVIEW_HEIGHT = 1080;
 
-    /**
-     * An {@link AutoFitTextureView} for camera preview.
-     */
-    private AutoFitTextureView mTextureView;
+    private TextureView mTextureView;
 
     private ShutterCallback mShutterCallback;
 
@@ -450,7 +448,7 @@ public class Camera2Source {
     /**
      * Closes the camera and stops sending frames to the underlying frame detector.
      * <p/>
-     * This camera source may be restarted again by calling {@link #start(AutoFitTextureView, int)}.
+     * This camera source may be restarted again by calling {@link #start(TextureView, int)}.
      * <p/>
      * Call {@link #release()} instead to completely shut down this camera source and release the
      * resources of the underlying detector.
@@ -520,7 +518,7 @@ public class Camera2Source {
      * @throws IOException if the supplied texture view could not be used as the preview display
      */
     @RequiresPermission(Manifest.permission.CAMERA)
-    public Camera2Source start(AutoFitTextureView textureView, int displayOrientation) throws IOException {
+    public Camera2Source start(TextureView textureView, int displayOrientation) throws IOException {
         mDisplayOrientation = displayOrientation;
         if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             if (cameraStarted) {
@@ -778,12 +776,12 @@ public class Camera2Source {
             mPreviewSize = chooseOptimalSize(outputSizes, rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth, maxPreviewHeight, largest);
 
             // We fit the aspect ratio of TextureView to the size of preview we picked.
-            int orientation = mDisplayOrientation;
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            } else {
-                mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
-            }
+//            int orientation = mDisplayOrientation;
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+//                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+//            } else {
+//                mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+//            }
 
             // Check if the flash is supported.
             Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);

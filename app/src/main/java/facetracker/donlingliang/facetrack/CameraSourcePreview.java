@@ -5,6 +5,7 @@ package facetracker.donlingliang.facetrack;
  */
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -26,7 +27,7 @@ public class CameraSourcePreview extends ViewGroup {
 
     //PREVIEW VISUALIZERS FOR CAMERA2 API.
     private SurfaceView mSurfaceView;
-    private AutoFitTextureView mAutoFitTextureView;
+    private TextureView mAutoFitTextureView;
 
     private boolean mStartRequested;
     private boolean mSurfaceAvailable;
@@ -36,20 +37,20 @@ public class CameraSourcePreview extends ViewGroup {
     private Camera2Source mCamera2Source;
 
     private GraphicOverlay mOverlay;
-    private int screenWidth;
-    private int screenHeight;
-    private int screenRotation;
+    private int mScreenWidth;
+    private int mScreenHeight;
+    private int mScreenRotation;
 
     public CameraSourcePreview(Context context, AttributeSet attrs) {
         super(context, attrs);
-        screenHeight = Utils.getScreenHeight(context);
-        screenWidth = Utils.getScreenWidth(context);
-        screenRotation = Utils.getScreenRotation(context);
+        mScreenHeight = Utils.getScreenHeight(context);
+        mScreenWidth = Utils.getScreenWidth(context);
+        mScreenRotation = Utils.getScreenRotation(context);
         mStartRequested = false;
         mSurfaceAvailable = false;
         mSurfaceView = new SurfaceView(context);
         mSurfaceView.getHolder().addCallback(mSurfaceViewListener);
-        mAutoFitTextureView = new AutoFitTextureView(context);
+        mAutoFitTextureView = new TextureView(context);
         mAutoFitTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
     }
 
@@ -87,7 +88,7 @@ public class CameraSourcePreview extends ViewGroup {
     private void startIfReady() throws IOException {
         if (mStartRequested && mSurfaceAvailable) {
             try {
-                mCamera2Source.start(mAutoFitTextureView, screenRotation);
+                mCamera2Source.start(mAutoFitTextureView, mScreenRotation);
                 if (mOverlay != null) {
                     Size size = mCamera2Source.getPreviewSize();
                     if (size != null) {
@@ -159,40 +160,58 @@ public class CameraSourcePreview extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        int width = 480;
-        int height = 720;
-
+        int width = 320;
+        int height = 480;
         if (mCamera2Source != null) {
             Size size = mCamera2Source.getPreviewSize();
             if (size != null) {
-                // Swap width and height sizes when in portrait, since it will be rotated 90 degrees
-                height = size.getWidth();
-                width = size.getHeight();
+                width = size.getWidth();
+                height = size.getHeight();
             }
         }
 
-
-        //RESIZE PREVIEW IGNORING ASPECT RATIO. THIS IS ESSENTIAL.
-        int newWidth = (height * screenWidth) / screenHeight;
+        // Swap width and height sizes when in portrait, since it will be rotated 90 degrees
+        if (isPortraitMode()) {
+            int tmp = width;
+            width = height;
+            height = tmp;
+        }
 
         final int layoutWidth = right - left;
         final int layoutHeight = bottom - top;
+
         // Computes height and width for potentially doing fit width.
         int childWidth = layoutWidth;
-        int childHeight = (int) (((float) layoutWidth / (float) newWidth) * height);
+        int childHeight = (int)(((float) layoutWidth / (float) width) * height);
+
         // If height is too tall using fit width, does fit height instead.
         if (childHeight > layoutHeight) {
             childHeight = layoutHeight;
-            childWidth = (int) (((float) layoutHeight / (float) height) * newWidth);
+            childWidth = (int)(((float) layoutHeight / (float) height) * width);
         }
+
         for (int i = 0; i < getChildCount(); ++i) {
             getChildAt(i).layout(0, 0, childWidth, childHeight);
         }
+
         try {
             startIfReady();
         } catch (IOException e) {
             Log.e(TAG, "Could not start camera source.", e);
         }
+    }
+
+    private boolean isPortraitMode() {
+        int orientation = getContext().getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            return false;
+        }
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            return true;
+        }
+
+        Log.d(TAG, "isPortraitMode returning false by default");
+        return false;
     }
 }
 

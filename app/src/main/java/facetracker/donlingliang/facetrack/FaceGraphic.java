@@ -28,7 +28,6 @@ import com.google.android.gms.vision.face.Landmark;
 public class FaceGraphic extends GraphicOverlay.Graphic {
 
     private BitmapFactory.Options opt;
-    private Resources resources;
 
     PointF facePosition;
     int faceId;
@@ -62,6 +61,7 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
     enum FaceEmojiType {
         CAT,
         DOG,
+        KIM,
     }
 
     // Custom paint
@@ -69,14 +69,16 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
 
     private volatile Face mFace;
     private Context mContext;
-    private FaceEmojiType mFaceEmojiType = FaceEmojiType.CAT;
+    private FaceEmojiType mFaceEmojiType;
 
-    public FaceGraphic(GraphicOverlay overlay, Context context) {
+    public FaceGraphic(GraphicOverlay overlay, FaceEmojiType faceEmojiType, Context context) {
         super(overlay);
+        mContext = context;
+        mFaceEmojiType = faceEmojiType;
+
         opt = new BitmapFactory.Options();
         opt.inScaled = false;
-        resources = context.getResources();
-        mContext = context;
+
         initFaceGraphicPaint();
     }
 
@@ -117,7 +119,6 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
             if (resizeFaceBitmap != null) {
                 resizeFaceBitmap.eraseColor(Color.TRANSPARENT);
             }
-            canvas.restore();
             isSmilingProbability = -1;
             eyeRightOpenProbability = -1;
             eyeLeftOpenProbability = -1;
@@ -142,9 +143,9 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
         float top = faceCenter.y - faceHeight;
         float right = faceCenter.x + faceWidth;
         float bottom = faceCenter.y + faceHeight;
-        canvas.drawRect(left, top, right, bottom, mPaint);
+//        canvas.drawRect(left, top, right, bottom, mPaint);
 
-        if(mFaceEmojiType == FaceEmojiType.CAT) {
+        if (mFaceEmojiType == FaceEmojiType.CAT) {
             if (face.getIsSmilingProbability() > THRESHOLD_MOUTH_OPEN) {
                 faceBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.cat_face);
             } else if (face.getIsSmilingProbability() > THRESHOLD_MOUTH_HALF_OPEN) {
@@ -152,24 +153,14 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
             } else {
                 faceBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.cat_face_normal);
             }
-        } else {
+        } else if (mFaceEmojiType == FaceEmojiType.DOG) {
             faceBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.dog_face);
+        } else if (mFaceEmojiType == FaceEmojiType.KIM) {
+            faceBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.kim);
         }
 
         resizeFaceBitmap = Bitmap.createScaledBitmap(faceBitmap, (int) faceWidth * 2, (int) faceHeight * 2, false);
         canvas.drawBitmap(resizeFaceBitmap, left, top, null);
-
-        // Draw lips
-//        if (mouthBase != null && leftMouthCorner != null) {
-//            float width = (mouthBase.x - leftMouthCorner.x) * 2f;
-//            float height = (mouthBase.y - leftMouthCorner.y) * 4f;
-//
-//            if (width > 0 && height > 0) {
-//                Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.lips);
-//                Bitmap resizeBitmap = Bitmap.createScaledBitmap(bitmap, (int) width * 2, (int) height, false);
-//                canvas.drawBitmap(resizeBitmap, mouthBase.x - width, mouthBase.y - height / 2f, null);
-//            }
-//        }
     }
 
     private void calculateLandmarkType() {

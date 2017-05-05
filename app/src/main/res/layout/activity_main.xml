@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    android:orientation="vertical">
 
     <facetracker.donlingliang.facetrack.CameraSourcePreview
         android:id="@+id/preview"
@@ -15,24 +17,28 @@
     </facetracker.donlingliang.facetrack.CameraSourcePreview>
 
     <LinearLayout
-        android:layout_gravity="bottom"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:weightSum="2"
-        android:background="@color/colorPrimary">
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"
+        android:background="@color/colorPrimary"
+        android:baselineAligned="false"
+        android:weightSum="2">
 
         <ImageView
             android:id="@+id/faceSwitch"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:src="@drawable/ic_face_white_36dp"/>
+            android:padding="8dp"
+            android:src="@drawable/ic_face_white_36dp" />
 
         <ImageView
             android:id="@+id/cameraSwitch"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:src="@drawable/ic_swap_horiz_white_36dp"/>
+            android:padding="8dp"
+            android:src="@drawable/ic_swap_horiz_white_36dp" />
     </LinearLayout>
-</FrameLayout>
+</RelativeLayout>
